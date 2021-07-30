@@ -55,8 +55,7 @@ int main(int argc, char * argv[])
         exit(EXIT_FAILURE);
     }
 
-    //receive message
-    //memset(buffer, 0, SIZE);
+    //while client is connected to server, run indefinitely
     int bytes_received;
     while((bytes_received = recv(socket_description, p_buffer, strlen(p_buffer), 0) > 0))
     {
@@ -82,16 +81,6 @@ int main(int argc, char * argv[])
             exit(EXIT_FAILURE);
         }
     }
-
-    // if (bytes_received < 0)
-    // {
-    //     perror("Error: Receiving message\n");
-    //     exit(EXIT_FAILURE);
-    // } 
-    // else 
-    // {
-    //     fprintf(stdout, "Server response: %s\n", p_buffer);
-    // }
     
     close(socket_description);
     
