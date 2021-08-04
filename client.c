@@ -30,7 +30,7 @@ int main(int argc, char * argv[])
     char *ip_address_server = argv[1]; 
     int port = atoi(argv[2]);
 
-    //create and return TCP socket description
+    //create and return TCP/IP socket description
     int socket_description = tcp_socket(port,ip_address_server);
 
     //hold client and server data
@@ -59,9 +59,9 @@ int main(int argc, char * argv[])
     int bytes_received;
     while((bytes_received = recv(socket_description, p_buffer, strlen(p_buffer), 0) > 0))
     {
-        if (*(p_buffer + bytes_received) == '\n')
+        if (*(p_buffer + bytes_received - 1) == '\n')
         {
-            *(p_buffer + bytes_received) = '\0';
+            *(p_buffer + bytes_received - 1) = '\0';
         }
 
         fprintf(stdout,"Server response: %s\n", p_buffer);

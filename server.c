@@ -66,9 +66,9 @@ int main(int argc, char const *argv[])
         while((bytes_received = recv(client,p_buffer,SIZE,0) > 0))
         {
             //check if the received message ends in a newline character, replace with null byte
-            if (*(p_buffer + bytes_received) == '\n')
+            if (*(p_buffer + bytes_received - 1) == '\n')
             {
-                *(p_buffer + bytes_received) = '\0';
+                *(p_buffer + bytes_received - 1) = '\0';
             }
             
             fprintf(stdout, "Received message from %s: %s", client_ip, p_buffer);
