@@ -19,6 +19,7 @@
 #include <arpa/inet.h>    /* inet_addr */
 #include <netinet/in.h>
 #include <unistd.h>       /* close */
+#include <sys/select.h>   /* select */
 
 #define SIZE 1024
 
@@ -39,47 +40,87 @@ int main(int argc, char const *argv[])
     //create TCP socket
     int sock_fd = socket_description(port, server_addr);
 
-    
+    //set up synchronous i/o for handling multiple clients
+    fd_set current_sockets, ready_sockets;     //create two sets of file descriptors to store, one to track our active connection (current_sock) and the other to hold temporary data (ready_sock)
+    FD_ZERO(&current_sockets);                 //initialise current sockets to zero
+    FD_SET(sock_fd, &current_sockets);         //adds a file descriptor to the current socket set
+
+    //handle client data
+    char buffer[SIZE];
+    char *p_buffer = buffer;
+    int bytes_received;
+
     //accept incoming connections
-    fprintf(stdout, "Waiting for new connection....\n");
+    fprintf(stdout, "Waiting for new connections....\n");
     socklen_t sock_len = sizeof(server_addr);
+
 
     while (1)
     {
-        int client = accept(sock_fd,(struct sockaddr *)&client_addr, &sock_len);
-        if (client < 0)
+
+        //copy current sock to ready sock to hold temporary data
+        ready_sockets = current_sockets;
+
+        int ready = select(FD_SETSIZE, &ready_sockets, NULL, NULL, NULL);
+        if (ready < 0)
         {
-            perror("Error accepting incoming connection");
+            perror("Could not read in ready_socket file descriptors (select error)");
             exit(EXIT_FAILURE);
         }
         
-        char const *client_ip = inet_ntoa(client_addr.sin_addr);
-        int client_port = ntohs(client_addr.sin_port);
-        fprintf(stdout, "Accepted new connection on %s:%d\n", client_ip, client_port);
 
-        
-        char buffer[SIZE];
-        char *p_buffer = buffer;
-        int bytes_received;
-
-        
-        while((bytes_received = recv(client,p_buffer,SIZE,0) > 0))
+        //loop over the file descriptors that are ready to be read in
+        for (int i = 0; i < FD_SETSIZE; i++)
         {
-            //check if the received message ends in a newline character, replace with null byte
-            if (*(p_buffer + bytes_received - 1) == '\n')
+            if (FD_ISSET(i, &ready_sockets))
             {
-                *(p_buffer + bytes_received - 1) = '\0';
-            }
-            
-            fprintf(stdout, "Received message from %s: %s", client_ip, p_buffer);
-            int bytes_sent = send(client, p_buffer, bytes_received, 0);
-            if (bytes_sent < 0)
-            {
-                perror("Error receiving message");
-                exit(EXIT_FAILURE);
-            }
+                if (i == sock_fd)
+                {
+                    // this is a new connection to accept, set the new connection to the client structure
+                    int client = accept(sock_fd,(struct sockaddr *)&client_addr, &sock_len);
+                    if (client < 0)
+                    {
+                        perror("Error accepting incoming connection");
+                        exit(EXIT_FAILURE);
+                    } 
+                    char const *client_ip = inet_ntoa(client_addr.sin_addr);
+                    int client_port = ntohs(client_addr.sin_port);
+                    fprintf(stdout, "Accepted new connection on %s:%d\n", client_ip, client_port);
+
+                    // add the new client to the set
+                    FD_SET(client, &current_sockets);
+                } 
+                else 
+                {
+                    // handle existing connection
+                    if((bytes_received = recv(i,p_buffer,SIZE,0) > 0))
+                    {
+                        //check if the received message ends in a newline character, replace with null byte
+                        if (*(p_buffer + bytes_received) == '\n')
+                        {
+                            *(p_buffer + bytes_received) = '\0';
+                        }
+                        char const *client_ip = inet_ntoa(client_addr.sin_addr);
+                        fprintf(stdout, "Received message from %s: %s", client_ip, p_buffer);
+                        int bytes_sent = send(i, p_buffer, bytes_received, 0);
+                        if (bytes_sent < 0)
+                        {
+                            perror("Error receiving message");
+                            exit(EXIT_FAILURE);
+                        }  
+                    }
+                    // host disconnected
+                    else
+                    {
+                        char const *client_ip = inet_ntoa(client_addr.sin_addr);
+                        uint16_t client_port = ntohs(client_addr.sin_port);
+                        fprintf(stdout, "Host disconnected: %s:%d\n", client_ip, client_port);
+                        close(i);
+                        FD_CLR(i, &current_sockets);
+                    }
+                }    
+            }   
         }
-        close(client);     
     }
 
     return 0;
