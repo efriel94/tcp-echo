@@ -69,7 +69,7 @@ int main(int argc, char const *argv[])
         }
         
 
-        //loop over the file descriptors that are ready to be read in
+        //loop over the file descriptors in the set to detect if there ready to be read in
         for (int i = 0; i < FD_SETSIZE; i++)
         {
             if (FD_ISSET(i, &ready_sockets))
@@ -101,7 +101,9 @@ int main(int argc, char const *argv[])
                             *(p_buffer + bytes_received) = '\0';
                         }
                         char const *client_ip = inet_ntoa(client_addr.sin_addr);
-                        fprintf(stdout, "Received message from %s: %s", client_ip, p_buffer);
+                        int client_port = ntohs(client_addr.sin_port);
+
+                        fprintf(stdout, "Received message from %s:%d %s", client_ip, client_port, p_buffer);
                         int bytes_sent = send(i, p_buffer, bytes_received, 0);
                         if (bytes_sent < 0)
                         {
@@ -115,6 +117,8 @@ int main(int argc, char const *argv[])
                         char const *client_ip = inet_ntoa(client_addr.sin_addr);
                         uint16_t client_port = ntohs(client_addr.sin_port);
                         fprintf(stdout, "Host disconnected: %s:%d\n", client_ip, client_port);
+                        
+                        //close socket and remove client from fd_set
                         close(i);
                         FD_CLR(i, &current_sockets);
                     }
