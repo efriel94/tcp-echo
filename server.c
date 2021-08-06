@@ -52,8 +52,8 @@ int main(int argc, char const *argv[])
 
     //accept incoming connections
     fprintf(stdout, "Waiting for new connections....\n");
-    socklen_t sock_len = sizeof(server_addr);
-
+    socklen_t server_len = sizeof(server_addr);
+    socklen_t client_len = sizeof(client_addr);
 
     while (1)
     {
@@ -77,7 +77,7 @@ int main(int argc, char const *argv[])
                 if (i == sock_fd)
                 {
                     // this is a new connection to accept, set the new connection to the client structure
-                    int client = accept(sock_fd,(struct sockaddr *)&client_addr, &sock_len);
+                    int client = accept(sock_fd,(struct sockaddr *)&client_addr, &server_len);
                     if (client < 0)
                     {
                         perror("Error accepting incoming connection");
@@ -114,6 +114,7 @@ int main(int argc, char const *argv[])
                     // host disconnected
                     else
                     {
+                        getpeername(i , (struct sockaddr*)&client_addr, &client_len);          
                         char const *client_ip = inet_ntoa(client_addr.sin_addr);
                         uint16_t client_port = ntohs(client_addr.sin_port);
                         fprintf(stdout, "Host disconnected: %s:%d\n", client_ip, client_port);
