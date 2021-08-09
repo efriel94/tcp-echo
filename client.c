@@ -59,9 +59,9 @@ int main(int argc, char * argv[])
     int bytes_received;
     while((bytes_received = recv(socket_description, p_buffer, strlen(p_buffer), 0) > 0))
     {
-        if (*(p_buffer + bytes_received - 1) == '\n')
+        if (*(p_buffer + bytes_received) == '\n')
         {
-            *(p_buffer + bytes_received - 1) = '\0';
+            *(p_buffer + bytes_received) = '\0';
         }
 
         fprintf(stdout,"Server response: %s\n", p_buffer);
