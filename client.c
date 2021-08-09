@@ -1,8 +1,3 @@
-/*
- * Description: Once a client opens a socket it needs to connect to the server socket endpoint and \
-                then be able to send/rec data
- */
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>       /* memset */
@@ -23,7 +18,7 @@ int main(int argc, char * argv[])
 {
     if (argc != 3) 
     {
-        fprintf(stdout,"Usage: ./client <server-address> <port>\n");
+        fprintf(stdout,"Usage: ./client <server-address> <server-port>\n");
         exit(EXIT_FAILURE);
     }
     
