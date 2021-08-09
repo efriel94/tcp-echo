@@ -1,15 +1,4 @@
-/*
- * Description: A server will open a socket, it will need to bind an IP address and port to the socket before it can listen for 
- *              connections, once it has binded the socket the server will listen for connections and the last step is to accept the
- *              connections.
- * Steps:
- * 1. Create socket
- * 2. Bind
- * 3. Listen
- * 4. Accept
- * 5. Receive
- * 6. Send
- */
+
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -41,9 +30,9 @@ int main(int argc, char const *argv[])
     int sock_fd = socket_description(port, server_addr);
 
     //set up synchronous i/o for handling multiple clients
-    fd_set current_sockets, ready_sockets;     //create two sets of file descriptors to store, one to track our active connection (current_sock) and the other to hold temporary data (ready_sock)
+    fd_set current_sockets, ready_sockets;     //create two sets of file descriptors to store, one to track our active connection (current_sock) and the other to hold temporary fds (ready_sock)
     FD_ZERO(&current_sockets);                 //initialise current sockets to zero
-    FD_SET(sock_fd, &current_sockets);         //adds a file descriptor to the current socket set
+    FD_SET(sock_fd, &current_sockets);         //add the master socket (file descriptor) to the fd_set
 
     //handle client data
     char buffer[SIZE];
@@ -74,9 +63,9 @@ int main(int argc, char const *argv[])
         {
             if (FD_ISSET(i, &ready_sockets))
             {
+                // this is a new connection to accept on the master socket, set the new connection to the client structure
                 if (i == sock_fd)
                 {
-                    // this is a new connection to accept, set the new connection to the client structure
                     int client = accept(sock_fd,(struct sockaddr *)&client_addr, &server_len);
                     if (client < 0)
                     {
@@ -87,12 +76,14 @@ int main(int argc, char const *argv[])
                     int client_port = ntohs(client_addr.sin_port);
                     fprintf(stdout, "Accepted new connection on %s:%d\n", client_ip, client_port);
 
-                    // add the new client to the set
+                    // add the new client to fd_set
                     FD_SET(client, &current_sockets);
                 } 
+                    
+                // handle existing client
                 else 
                 {
-                    // handle existing connection
+
                     if((bytes_received = recv(i,p_buffer,SIZE,0) > 0))
                     {
                         //check if the received message ends in a newline character, replace with null byte
@@ -111,6 +102,7 @@ int main(int argc, char const *argv[])
                             exit(EXIT_FAILURE);
                         }  
                     }
+                    
                     // host disconnected
                     else
                     {
@@ -132,6 +124,18 @@ int main(int argc, char const *argv[])
 
 }
 
+/* 
+ * Function: socket_description
+ * ----------------------------
+ * creates a IPv4 TCP/IP socket
+ * 
+ * port: port number which the socket will be bind to on the 
+ *       host computer
+ * 
+ * server_addr: struct for describing the server/host address
+ * 
+ * returns: socket description
+ */
 int socket_description(int port, struct sockaddr_in server_addr)
 {
     //create socket
@@ -154,7 +158,7 @@ int socket_description(int port, struct sockaddr_in server_addr)
         exit(EXIT_FAILURE);
     }
 
-    //listen for incoming connections
+    //listen for incoming connections, queue after four connections
     int listen_socket = listen(server_socket, 4);
     if (listen_socket < 0)
     {
