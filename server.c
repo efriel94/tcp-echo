@@ -30,7 +30,7 @@ int main(int argc, char const *argv[])
     int sock_fd = socket_description(port, server_addr);
 
     //set up synchronous i/o for handling multiple clients
-    fd_set readfs, temp_readfs;       //create two sets of file descriptors to store, one to track our active connection (current_sock) and the other to hold temporary fds (ready_sock)
+    fd_set readfs, temp_readfs;       //create two sets of file descriptors, one to track active connections (readfs) and the other to hold temporary fds (temp_readfs)
     FD_ZERO(&readfs);                 //initialise current sockets to zero
     FD_SET(sock_fd, &readfs);         //add the master socket (file descriptor) to the fd_set
 
