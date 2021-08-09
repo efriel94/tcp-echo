@@ -1,8 +1,3 @@
-/*
- * Description: Once a client opens a socket it needs to connect to the server socket endpoint and \
-                then be able to send/rec data
- */
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>       /* memset */
@@ -23,14 +18,14 @@ int main(int argc, char * argv[])
 {
     if (argc != 3) 
     {
-        fprintf(stdout,"Usage: ./client <server-address> <port>\n");
+        fprintf(stdout,"Usage: ./client <server-address> <server-port>\n");
         exit(EXIT_FAILURE);
     }
     
     char *ip_address_server = argv[1]; 
     int port = atoi(argv[2]);
 
-    //create and return TCP socket description
+    //create and return TCP/IP socket description
     int socket_description = tcp_socket(port,ip_address_server);
 
     //hold client and server data
@@ -55,8 +50,7 @@ int main(int argc, char * argv[])
         exit(EXIT_FAILURE);
     }
 
-    //receive message
-    //memset(buffer, 0, SIZE);
+    //while client is connected to server, run indefinitely
     int bytes_received;
     while((bytes_received = recv(socket_description, p_buffer, strlen(p_buffer), 0) > 0))
     {
@@ -82,16 +76,6 @@ int main(int argc, char * argv[])
             exit(EXIT_FAILURE);
         }
     }
-
-    // if (bytes_received < 0)
-    // {
-    //     perror("Error: Receiving message\n");
-    //     exit(EXIT_FAILURE);
-    // } 
-    // else 
-    // {
-    //     fprintf(stdout, "Server response: %s\n", p_buffer);
-    // }
     
     close(socket_description);
     
