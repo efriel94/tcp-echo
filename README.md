@@ -27,7 +27,7 @@ Run server first:
 
 Clients:
 ```bash
-./client <server-address> <port>
+./client <server-address> <server-port>
 ```
 
 ## Demo 

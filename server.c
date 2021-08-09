@@ -30,9 +30,9 @@ int main(int argc, char const *argv[])
     int sock_fd = socket_description(port, server_addr);
 
     //set up synchronous i/o for handling multiple clients
-    fd_set current_sockets, ready_sockets;     //create two sets of file descriptors to store, one to track our active connection (current_sock) and the other to hold temporary fds (ready_sock)
-    FD_ZERO(&current_sockets);                 //initialise current sockets to zero
-    FD_SET(sock_fd, &current_sockets);         //add the master socket (file descriptor) to the fd_set
+    fd_set readfs, temp_readfs;       //create two sets of file descriptors to store, one to track our active connection (current_sock) and the other to hold temporary fds (ready_sock)
+    FD_ZERO(&readfs);                 //initialise current sockets to zero
+    FD_SET(sock_fd, &readfs);         //add the master socket (file descriptor) to the fd_set
 
     //handle client data
     char buffer[SIZE];
@@ -46,11 +46,9 @@ int main(int argc, char const *argv[])
 
     while (1)
     {
+        temp_readfs = readfs;
 
-        //copy current sock to ready sock to hold temporary data
-        ready_sockets = current_sockets;
-
-        int ready = select(FD_SETSIZE, &ready_sockets, NULL, NULL, NULL);
+        int ready = select(FD_SETSIZE, &temp_readfs, NULL, NULL, NULL);
         if (ready < 0)
         {
             perror("Could not read in ready_socket file descriptors (select error)");
@@ -61,7 +59,7 @@ int main(int argc, char const *argv[])
         //loop over the file descriptors in the set to detect if there ready to be read in
         for (int i = 0; i < FD_SETSIZE; i++)
         {
-            if (FD_ISSET(i, &ready_sockets))
+            if (FD_ISSET(i, &temp_readfs))
             {
                 // this is a new connection to accept on the master socket, set the new connection to the client structure
                 if (i == sock_fd)
@@ -77,7 +75,7 @@ int main(int argc, char const *argv[])
                     fprintf(stdout, "Accepted new connection on %s:%d\n", client_ip, client_port);
 
                     // add the new client to fd_set
-                    FD_SET(client, &current_sockets);
+                    FD_SET(client, &readfs);
                 } 
                     
                 // handle existing client
@@ -113,7 +111,7 @@ int main(int argc, char const *argv[])
                         
                         //close socket and remove client from fd_set
                         close(i);
-                        FD_CLR(i, &current_sockets);
+                        FD_CLR(i, &readfs);
                     }
                 }    
             }   
