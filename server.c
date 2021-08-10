@@ -11,6 +11,8 @@
 #define SIZE 1024
 
 int socket_description(int port, struct sockaddr_in server_addr);
+void disconnect_client(fd_set temp_fds, struct sockaddr_in client_addr, socklen_t *client_len, int client);
+
 
 int main(int argc, char const *argv[])
 {
@@ -49,7 +51,7 @@ int main(int argc, char const *argv[])
         int ready = select(FD_SETSIZE, &temp_readfs, NULL, NULL, NULL);
         if (ready < 0)
         {
-            perror("Could not read in ready_socket file descriptors (select error)");
+            perror("Could not read in file descriptor (select error)");
             exit(EXIT_FAILURE);
         }
         
@@ -92,19 +94,16 @@ int main(int argc, char const *argv[])
                         char const *client_ip = inet_ntoa(client_addr.sin_addr);
                         int client_port = ntohs(client_addr.sin_port);
 
-                        fprintf(stdout, "Received message from %s:%d %s\n", client_ip, client_port, p_buffer);
-
                         //check if the client sends a quit message to the server
                         if (strcmp(p_buffer,"quit") == 0)
                         {
-                            fprintf(stdout, "Removing client from server\n");
-                            close(i);
+                            disconnect_client(readfs,client_addr,&client_len, i);
                             FD_CLR(i, &readfs);
-                            break;
-                        } 
+                        }
+                        //echo back message
                         else
                         {
-                            fprintf(stdout, "Echoing back %s\n", p_buffer);
+                            fprintf(stdout, "Echoing message: \"%s\" back to %s:%d\n",p_buffer, client_ip, client_port);
                             int bytes_sent = send(i, p_buffer, strlen(p_buffer), 0);
                             if (bytes_sent < 0)
                             {
@@ -117,13 +116,7 @@ int main(int argc, char const *argv[])
                     // host disconnected
                     else
                     {
-                        getpeername(i , (struct sockaddr*)&client_addr, &client_len);          
-                        char const *client_ip = inet_ntoa(client_addr.sin_addr);
-                        uint16_t client_port = ntohs(client_addr.sin_port);
-                        fprintf(stdout, "Host disconnected: %s:%d\n", client_ip, client_port);
-                        
-                        //close socket and remove client from fd_set
-                        close(i);
+                        disconnect_client(readfs, client_addr, &client_len, i);
                         FD_CLR(i, &readfs);
                     }
                 }    
@@ -178,4 +171,16 @@ int socket_description(int port, struct sockaddr_in server_addr)
     }
     
     return server_socket;
+}
+
+
+void disconnect_client(fd_set temp_fds, struct sockaddr_in client_addr, socklen_t *client_len, int client)
+{
+    getpeername(client , (struct sockaddr*)&client_addr, client_len);          
+    char const *client_ip = inet_ntoa(client_addr.sin_addr);
+    uint16_t client_port = ntohs(client_addr.sin_port);
+    fprintf(stdout, "Host disconnected: %s:%d\n", client_ip, client_port);
+    
+    //close socket and remove client from fd_set
+    close(client);  
 }
