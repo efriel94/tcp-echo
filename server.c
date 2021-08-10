@@ -8,8 +8,10 @@
 #include <unistd.h>       /* close */
 #include <sys/select.h>   /* select */
 
-#define SIZE 1024
-#define MAX_FDS 7
+#define SIZE 1024         /* 1KB */
+#define MAX_FDS 7         /* Max allowed clients on the server is 3
+                           * Client socket numbers start at 4 since the first three is used for read,write,error handling 
+                           */
 
 int socket_description(int port, struct sockaddr_in server_addr);
 void disconnect_client(fd_set temp_fds, struct sockaddr_in client_addr, socklen_t *client_len, int client);
