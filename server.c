@@ -9,6 +9,7 @@
 #include <sys/select.h>   /* select */
 
 #define SIZE 1024
+#define MAX_FDS 7
 
 int socket_description(int port, struct sockaddr_in server_addr);
 void disconnect_client(fd_set temp_fds, struct sockaddr_in client_addr, socklen_t *client_len, int client);
@@ -48,7 +49,7 @@ int main(int argc, char const *argv[])
     {
         temp_readfs = readfs;
 
-        int ready = select(FD_SETSIZE, &temp_readfs, NULL, NULL, NULL);
+        int ready = select(MAX_FDS, &temp_readfs, NULL, NULL, NULL);
         if (ready < 0)
         {
             perror("Could not read in file descriptor (select error)");
@@ -57,7 +58,7 @@ int main(int argc, char const *argv[])
         
 
         //loop over the file descriptors in the set to detect if there ready to be read in
-        for (int i = 0; i < FD_SETSIZE; i++)
+        for (int i = 0; i <= MAX_FDS; i++)
         {
             if (FD_ISSET(i, &temp_readfs))
             {
