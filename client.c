@@ -8,7 +8,7 @@
 #include <unistd.h>       /* close */
 
 
-#define SIZE 256
+#define SIZE 1024
 
 
 int tcp_socket(int port, char *ip_address_server);
@@ -31,35 +31,18 @@ int main(int argc, char * argv[])
     //hold client and server data
     char buffer[SIZE];
     char *p_buffer = buffer;
-
-    //send message
     memset(buffer, 0, SIZE);
-    fprintf(stdout,"> ");
-    if(fgets(p_buffer,SIZE,stdin) != NULL)
-    {
-        int bytes_sent = send(socket_description, p_buffer, SIZE, 0);
-        if (bytes_sent < 0)
-        {
-            perror("Error: Sending message!");
-            exit(EXIT_FAILURE);
-        }
-    }
-    else 
-    {
-        perror("Error: Writing message to buffer\n");
-        exit(EXIT_FAILURE);
-    }
 
     //while client is connected to server, run indefinitely
     int bytes_received;
-    while((bytes_received = recv(socket_description, p_buffer, strlen(p_buffer), 0) > 0))
+    while((bytes_received = recv(socket_description, p_buffer, SIZE, 0) > 0))
     {
         if (*(p_buffer + strlen(p_buffer) - 1) == '\n')
         {
             *(p_buffer + strlen(p_buffer) - 1) = '\0';
         }
 
-        fprintf(stdout,"Server response: %s\n", p_buffer);
+        fprintf(stdout,"%s\n", p_buffer);
         fprintf(stdout,"> ");
         if(fgets(p_buffer,SIZE,stdin) != NULL)
         {

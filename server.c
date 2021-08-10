@@ -9,9 +9,9 @@
 #include <sys/select.h>   /* select */
 
 #define SIZE 1024         /* 1KB */
-#define MAX_FDS 7         /* Max allowed clients on the server is 3
-                           * Client socket numbers start at 4 since the first three is used for read,write,error handling 
-                           */
+#define MAX_FDS 7         /* Max allowed clients on the server is 3 */
+                          /* Client socket numbers start at 4 since the first three is used for read,write,error handling */
+
 
 int socket_description(int port, struct sockaddr_in server_addr);
 void disconnect_client(fd_set temp_fds, struct sockaddr_in client_addr, socklen_t *client_len, int client);
@@ -28,6 +28,7 @@ int main(int argc, char const *argv[])
     int port = atoi(argv[1]);
     struct sockaddr_in server_addr;
     struct sockaddr_in client_addr;
+    char *welcome_message = "**** TCP/IP ECHO Server ****\r\nYou are now connected.\n";
 
     //create TCP socket
     int sock_fd = socket_description(port, server_addr);
@@ -75,7 +76,14 @@ int main(int argc, char const *argv[])
                     } 
                     char const *client_ip = inet_ntoa(client_addr.sin_addr);
                     int client_port = ntohs(client_addr.sin_port);
+                    int bytes_sent = send(client, welcome_message, strlen(welcome_message), 0);
+                    if (bytes_sent < 0)
+                    {
+                        perror("Error receiving message");
+                        exit(EXIT_FAILURE);
+                    }  
                     fprintf(stdout, "Accepted new connection on %s:%d\n", client_ip, client_port);
+
 
                     // add the new client to fd_set
                     FD_SET(client, &readfs);
