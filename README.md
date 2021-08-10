@@ -7,7 +7,7 @@ The synchronous I/O functionality was implemented using the functions in the sel
 The server will continously loop around ```fd_set``` to handle new and existing client connections. <br><br>
 
 **Adding new clients to the server:** If the file descriptor being ready to be read in is the same as the master socket then it signifies that a new client is connecting to the server and so the new client will be added to ```fd_set```<br>
-**Handling existing clients:** If the file descriptor being ready to be read in is not the same as the master socket then the server will handle the existing client within ```fd_set``` <br><br>
+**Handling existing clients:** If the file descriptor being ready to be read in is not the same as the master socket then the server will handle the existing client within ```fd_set``` <br>
 **Removing clients:** If the return value from the received client is zero, then the server will close the client socket and remove their file descriptor from ```fd_set```
 
 ## Build
