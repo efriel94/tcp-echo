@@ -83,14 +83,14 @@ int main(int argc, char const *argv[])
                     if((bytes_received = recv(i,p_buffer,SIZE,0) > 0))
                     {
                         //check if the received message ends in a newline character, replace with null byte
-                        if (*(p_buffer + bytes_received) == '\n')
+                        if (*(p_buffer + strlen(p_buffer) - 1) == '\n')
                         {
-                            *(p_buffer + bytes_received) = '\0';
+                            *(p_buffer + strlen(p_buffer) - 1) = '\0';
                         }
                         char const *client_ip = inet_ntoa(client_addr.sin_addr);
                         int client_port = ntohs(client_addr.sin_port);
 
-                        fprintf(stdout, "Received message from %s:%d %s", client_ip, client_port, p_buffer);
+                        fprintf(stdout, "Echoing message: \"%s\" back to %s:%d\n", p_buffer, client_ip, client_port);
                         int bytes_sent = send(i, p_buffer, bytes_received, 0);
                         if (bytes_sent < 0)
                         {
