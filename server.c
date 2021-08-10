@@ -8,14 +8,14 @@
 #include <unistd.h>       /* close */
 #include <sys/select.h>   /* select */
 
-#define SIZE 1024         /* 1KB */
-#define MAX_FDS 7         /* Max allowed clients on the server is 3 */
-                          /* Client socket numbers start at 4 since the first three is used for read,write,error handling */
+#define SIZE               1024         /* 1KB */
+#define MAX_FDS            6            /* Max allowed clients on the server is 3 */
+                                        /* Client socket numbers start at 4 since the first three is used for read,write,error handling */
 
 
 int socket_description(int port, struct sockaddr_in server_addr);
 void disconnect_client(fd_set temp_fds, struct sockaddr_in client_addr, socklen_t *client_len, int client);
-
+int accept_client(int master_sock);
 
 int main(int argc, char const *argv[])
 {
@@ -28,7 +28,6 @@ int main(int argc, char const *argv[])
     int port = atoi(argv[1]);
     struct sockaddr_in server_addr;
     struct sockaddr_in client_addr;
-    char *welcome_message = "**** TCP/IP ECHO Server ****\r\nYou are now connected.\n";
 
     //create TCP socket
     int sock_fd = socket_description(port, server_addr);
@@ -46,7 +45,6 @@ int main(int argc, char const *argv[])
     //accept incoming connections
     fprintf(stdout, "Waiting for new connections....\n");
     socklen_t server_len = sizeof(server_addr);
-    socklen_t client_len = sizeof(client_addr);
 
     while (1)
     {
@@ -68,25 +66,15 @@ int main(int argc, char const *argv[])
                 // this is a new connection to accept on the master socket, set the new connection to the client structure
                 if (i == sock_fd)
                 {
-                    int client = accept(sock_fd,(struct sockaddr *)&client_addr, &server_len);
-                    if (client < 0)
+                    int accept_check = accept_client(i);
+                    if(accept_check < 0)
                     {
-                        perror("Error accepting incoming connection");
-                        exit(EXIT_FAILURE);
-                    } 
-                    char const *client_ip = inet_ntoa(client_addr.sin_addr);
-                    int client_port = ntohs(client_addr.sin_port);
-                    int bytes_sent = send(client, welcome_message, strlen(welcome_message), 0);
-                    if (bytes_sent < 0)
-                    {
-                        perror("Error receiving message");
-                        exit(EXIT_FAILURE);
-                    }  
-                    fprintf(stdout, "Accepted new connection on %s:%d\n", client_ip, client_port);
-
-
+                        close(accept_check);
+                        FD_CLR(accept_check, &readfs);
+                    }
+                    
                     // add the new client to fd_set
-                    FD_SET(client, &readfs);
+                    FD_SET(accept_check, &readfs);
                 } 
                     
                 // handle existing client
@@ -100,21 +88,17 @@ int main(int argc, char const *argv[])
                         {
                             *(p_buffer + strlen(p_buffer) - 1) = '\0';
                         }
-                        
-
-                        char const *client_ip = inet_ntoa(client_addr.sin_addr);
-                        int client_port = ntohs(client_addr.sin_port);
 
                         //check if the client sends a quit message to the server
                         if (strcmp(p_buffer,"quit") == 0)
                         {
-                            disconnect_client(readfs,client_addr,&client_len, i);
+                            disconnect_client(readfs,client_addr,&server_len, i);
                             FD_CLR(i, &readfs);
                         }
                         //echo back message
                         else
                         {
-                            fprintf(stdout, "Echoing message: \"%s\" back to %s:%d\n",p_buffer, client_ip, client_port);
+                            fprintf(stdout, "Echoing message: \"%s\" back to %s:%d\n",p_buffer, inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
                             int bytes_sent = send(i, p_buffer, strlen(p_buffer), 0);
                             if (bytes_sent < 0)
                             {
@@ -127,7 +111,7 @@ int main(int argc, char const *argv[])
                     // host disconnected
                     else
                     {
-                        disconnect_client(readfs, client_addr, &client_len, i);
+                        disconnect_client(readfs, client_addr, &server_len, i);
                         FD_CLR(i, &readfs);
                     }
                 }    
@@ -187,7 +171,6 @@ int socket_description(int port, struct sockaddr_in server_addr)
  * client_addr: Struct for describing the client address
  * client_len : Length of client address
  * client     : socket description
- * 
  */
 void disconnect_client(fd_set temp_fds, struct sockaddr_in client_addr, socklen_t *client_len, int client)
 {
@@ -198,4 +181,47 @@ void disconnect_client(fd_set temp_fds, struct sockaddr_in client_addr, socklen_
     
     //close socket and remove client from fd_set
     close(client);  
+}
+
+/* 
+ * Checks if client is allowed to be accepted
+ * master_sock: socket description
+ * returns: True - socket number of client if sock number is less than max allowed clients MAX_FDS
+ *        : False - -1 if maximum number of clients is reached   
+ */
+int accept_client(int master_sock)
+{
+    char *welcome = "**** TCP/IP ECHO Server ****\r\nYou are now connected.\n";
+    char *server_full = "close";
+
+    struct sockaddr_in client_addr;
+    socklen_t client_len = sizeof(client_addr);
+    int client_fds = accept(master_sock, (struct sockaddr *)&client_addr, &client_len);
+
+    fprintf(stdout, "Socket number client: %d\n", client_fds);
+    fprintf(stdout, "Accepted new connection on %s:%d\n", inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
+    if (client_fds == -1)
+    {
+        //error, exit program
+        perror("Error accepting client");
+        exit(EXIT_FAILURE);
+
+    }
+    else if (client_fds > 0 && client_fds < MAX_FDS)
+    {
+        //send welcome message to client
+        if(send(client_fds, welcome, strlen(welcome), 0) < 0) {
+            perror("Error sending message to client\n");
+        }
+        return client_fds;
+    }
+    else 
+    {
+        //let client know server is full, unable to join
+        fprintf(stdout, "Server at full capacity. Sending close flag to client\n");
+        if(send(client_fds, server_full, strlen(server_full), 0) < 0) {
+            perror("Error sending message to client\n");
+        }
+        return -1;
+    }
 }

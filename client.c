@@ -42,6 +42,12 @@ int main(int argc, char * argv[])
             *(p_buffer + strlen(p_buffer) - 1) = '\0';
         }
 
+        if (strcmp(p_buffer, "close") == 0)
+        {
+            fprintf(stdout, "Server full flag recieved\nClosing connection\n");
+            break;
+        }
+        
         fprintf(stdout,"%s\n", p_buffer);
         fprintf(stdout,"> ");
         if(fgets(p_buffer,SIZE,stdin) != NULL)
