@@ -132,14 +132,10 @@ int main(int argc, char const *argv[])
 }
 
 /* 
- * Function: socket_description
- * ----------------------------
- * creates a IPv4 TCP/IP socket
+ * Creates a IPv4 TCP/IP socket
  * 
- * port: port number which the socket will be bind to on the 
- *       host computer
- * 
- * server_addr: struct for describing the server/host address
+ * port       : Socket will be bind and listen to port number on host
+ * server_addr: Struct for describing the server/host address
  * 
  * returns: socket description
  */
@@ -176,7 +172,15 @@ int socket_description(int port, struct sockaddr_in server_addr)
     return server_socket;
 }
 
-
+/* 
+ * Will disconnect client from server
+ * 
+ * temp_fds   : The file descriptor set storing client info
+ * client_addr: Struct for describing the client address
+ * client_len : Length of client address
+ * client     : socket description
+ * 
+ */
 void disconnect_client(fd_set temp_fds, struct sockaddr_in client_addr, socklen_t *client_len, int client)
 {
     getpeername(client , (struct sockaddr*)&client_addr, client_len);          
