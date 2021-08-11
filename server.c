@@ -13,7 +13,6 @@
 int socket_description(int port, struct sockaddr_in server_addr);
 void remove_newline(char *p);
 
-
 int main(int argc, char const *argv[])
 {
     if (argc != 2)
@@ -84,23 +83,22 @@ int main(int argc, char const *argv[])
                     {
                         //check if the received message ends in a newline character, replace with null byte.
                         remove_newline(p_buffer);
-                        if (strcmp(p_buffer,"quit") == 0)
-                        {
+                        if (strcmp(p_buffer,"quit") == 0){
                             //disconnect client and close socket
                             getpeername(i , (struct sockaddr*)&client_addr, &client_len);
                             fprintf(stdout, "Host disconnected: %s:%d\n", inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
                             close(i);
                             FD_CLR(i, &readfs);
                             break;
-                        }
-                        
-                        fprintf(stdout, "Echoing message: \"%s\" back to %s:%d\n", p_buffer, inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
-                        int bytes_sent = send(i, p_buffer, bytes_received, 0);
-                        if (bytes_sent < 0)
-                        {
-                            perror("Error receiving message");
-                            exit(EXIT_FAILURE);
-                        }  
+                        } else {
+                            fprintf(stdout, "Echoing message: \"%s\" back to %s:%d\n", p_buffer, inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
+                            int bytes_sent = send(i, p_buffer, bytes_received, 0);
+                            if (bytes_sent < 0)
+                            {
+                                perror("Error receiving message");
+                                exit(EXIT_FAILURE);
+                            }  
+                        } 
                     }
                     
                     // host disconnected
