@@ -12,6 +12,7 @@
 
 int socket_description(int port, struct sockaddr_in server_addr);
 void remove_newline(char *p);
+void disconnect_client(int fd);
 
 int main(int argc, char const *argv[])
 {
@@ -79,15 +80,11 @@ int main(int argc, char const *argv[])
                 else 
                 {
 
-                    if((bytes_received = recv(i,p_buffer,SIZE,0) > 0))
-                    {
+                    if((bytes_received = recv(i,p_buffer,SIZE,0) > 0)){
                         //check if the received message ends in a newline character, replace with null byte.
                         remove_newline(p_buffer);
                         if (strcmp(p_buffer,"quit") == 0){
-                            //disconnect client and close socket
-                            getpeername(i , (struct sockaddr*)&client_addr, &client_len);
-                            fprintf(stdout, "Host disconnected: %s:%d\n", inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
-                            close(i);
+                            disconnect_client(i);
                             FD_CLR(i, &readfs);
                             break;
                         } else {
@@ -104,11 +101,7 @@ int main(int argc, char const *argv[])
                     // host disconnected
                     else
                     {
-                        getpeername(i , (struct sockaddr*)&client_addr, &client_len);          
-                        fprintf(stdout, "Host disconnected: %s:%d\n", inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
-                        
-                        //close socket and remove client from fd_set
-                        close(i);
+                        disconnect_client(i);
                         FD_CLR(i, &readfs);
                     }
                 }    
@@ -174,4 +167,17 @@ void remove_newline(char *p)
         }
         ++p;
     }
+}
+
+/* 
+ * Close client socket
+ * fd: client file descriptor
+ */
+void disconnect_client(int fd)
+{
+    struct sockaddr_in addr;
+    socklen_t addr_len = sizeof(addr);
+    getpeername(fd , (struct sockaddr*)&addr, &addr_len);
+    fprintf(stdout, "Host disconnected: %s:%d\n", inet_ntoa(addr.sin_addr), ntohs(addr.sin_port));
+    close(fd);
 }
