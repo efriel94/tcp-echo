@@ -97,9 +97,7 @@ int main(int argc, char const *argv[])
                     else
                     {
                         getpeername(i , (struct sockaddr*)&client_addr, &client_len);          
-                        char const *client_ip = inet_ntoa(client_addr.sin_addr);
-                        uint16_t client_port = ntohs(client_addr.sin_port);
-                        fprintf(stdout, "Host disconnected: %s:%d\n", client_ip, client_port);
+                        fprintf(stdout, "Host disconnected: %s:%d\n", inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
                         
                         //close socket and remove client from fd_set
                         close(i);
