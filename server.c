@@ -11,6 +11,8 @@
 #define SIZE 1024
 
 int socket_description(int port, struct sockaddr_in server_addr);
+void remove_newline(char *p);
+
 
 int main(int argc, char const *argv[])
 {
@@ -83,10 +85,7 @@ int main(int argc, char const *argv[])
                     if((bytes_received = recv(i,p_buffer,SIZE,0) > 0))
                     {
                         //check if the received message ends in a newline character, replace with null byte
-                        if (*(p_buffer + strlen(p_buffer) - 1) == '\n')
-                        {
-                            *(p_buffer + strlen(p_buffer) - 1) = '\0';
-                        }
+                        remove_newline(p_buffer);
                         char const *client_ip = inet_ntoa(client_addr.sin_addr);
                         int client_port = ntohs(client_addr.sin_port);
 
@@ -163,4 +162,17 @@ int socket_description(int port, struct sockaddr_in server_addr)
     }
     
     return server_socket;
+}
+
+
+//remove null char from recieved message
+void remove_newline(char *p)
+{
+    while(*p)
+    {
+        if(*p == '\n'){
+            *p = '\0';
+        }
+        ++p;
+    }
 }
