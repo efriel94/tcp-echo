@@ -19,7 +19,7 @@
 #include <unistd.h>       /* close */
 #include <sys/select.h>   /* select */
 
-#define SIZE    1024      /* 1KB */
+#define SIZE  1024      
 
 int socket_description(int port);
 void remove_newline(char *p);

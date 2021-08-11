@@ -19,7 +19,7 @@
 #include <unistd.h>       /* close */
 
 
-#define SIZE 256
+#define SIZE 1024
 
 
 int tcp_socket(int port, char *ip_address_server);
@@ -118,6 +118,10 @@ int tcp_socket(int port, char *ip_address_server)
     return network_socket;
 }
 
+/* 
+ * Replaces newline char with null nyte in the recieved message
+ * p: The client message
+ */
 void remove_newline(char *p)
 {
     while(*p){
