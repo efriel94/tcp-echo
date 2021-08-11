@@ -113,14 +113,9 @@ int main(int argc, char const *argv[])
 }
 
 /* 
- * Function: socket_description
- * ----------------------------
- * creates a IPv4 TCP/IP socket
- * 
- * port: port number which the socket will be bind to on the 
- *       host computer
- * 
- * server_addr: struct for describing the server/host address
+ * Creates a IPv4 TCP/IP socket
+ * port: Socket will be listen on port num  
+ * server_addr: Struct for describing the server/host address
  * 
  * returns: socket description
  */
@@ -158,7 +153,10 @@ int socket_description(int port, struct sockaddr_in server_addr)
 }
 
 
-//remove null char from recieved message
+/* 
+ * Replaces newline char with null nyte
+ * p: The client message
+ */
 void remove_newline(char *p)
 {
     while(*p)
