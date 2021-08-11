@@ -57,7 +57,7 @@ int main(int argc, char const *argv[])
         for (int i = 0; i < FD_SETSIZE; i++){
             if (FD_ISSET(i, &temp_readfs)){
 
-                // this is a new connection to accept on the master socket, set the new connection to the client structure
+                //new connection to accept
                 if (i == sock_fd){
                     int socket_number = accept_client(i);
 
