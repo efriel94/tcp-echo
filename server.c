@@ -76,20 +76,12 @@ int main(int argc, char const *argv[])
                             FD_CLR(i, &readfs);
                             break;
                         } else {
-                            //fprintf(stdout, "Echoing message: \"%s\" back to %s:%d\n", p_buffer, inet_ntoa(addr.sin_addr), ntohs(addr.sin_port));
-                            // int bytes_sent = send(i, p_buffer, bytes_received, 0);
-                            // if (bytes_sent < 0)
-                            // {
-                            //     perror("Error receiving message");
-                            //     exit(EXIT_FAILURE);
-                            // }
                             echo_message(i, p_buffer);
                         } 
                     }
                     
                     // host disconnected
-                    else
-                    {
+                    else{
                         disconnect_client(i);
                         FD_CLR(i, &readfs);
                     }
@@ -151,8 +143,7 @@ int socket_description(int port)
  */
 void remove_newline(char *p)
 {
-    while(*p)
-    {
+    while(*p){
         if(*p == '\n'){
             *p = '\0';
         }
@@ -173,6 +164,11 @@ void disconnect_client(int fd)
     close(fd);
 }
 
+/* 
+ * Accepts new clients
+ * fd: client file descriptor
+ * returns: client socket description number
+ */
 int accept_client(int fd)
 {
     struct sockaddr_in addr;
@@ -187,6 +183,11 @@ int accept_client(int fd)
     return client;
 }
 
+/* 
+ * Sends message to client
+ * fd: client file descriptor
+ * buffer: message to send to client
+ */
 void echo_message(int fd, char * buffer)
 {
     struct sockaddr_in addr;
