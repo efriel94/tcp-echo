@@ -70,9 +70,7 @@ int main(int argc, char const *argv[])
                         perror("Error accepting incoming connection");
                         exit(EXIT_FAILURE);
                     } 
-                    char const *client_ip = inet_ntoa(client_addr.sin_addr);
-                    int client_port = ntohs(client_addr.sin_port);
-                    fprintf(stdout, "Accepted new connection on %s:%d\n", client_ip, client_port);
+                    fprintf(stdout, "Accepted new connection on %s:%d\n", inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
 
                     // add the new client to fd_set
                     FD_SET(client, &readfs);
@@ -84,12 +82,9 @@ int main(int argc, char const *argv[])
 
                     if((bytes_received = recv(i,p_buffer,SIZE,0) > 0))
                     {
-                        //check if the received message ends in a newline character, replace with null byte
+                        //check if the received message ends in a newline character, replace with null byte.
                         remove_newline(p_buffer);
-                        char const *client_ip = inet_ntoa(client_addr.sin_addr);
-                        int client_port = ntohs(client_addr.sin_port);
-
-                        fprintf(stdout, "Echoing message: \"%s\" back to %s:%d\n", p_buffer, client_ip, client_port);
+                        fprintf(stdout, "Echoing message: \"%s\" back to %s:%d\n", p_buffer, inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
                         int bytes_sent = send(i, p_buffer, bytes_received, 0);
                         if (bytes_sent < 0)
                         {
