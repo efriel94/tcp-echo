@@ -23,16 +23,16 @@ int main(int argc, char const *argv[])
     }
     
     int port = atoi(argv[1]);
-    struct sockaddr_in addr;
-    socklen_t addr_len = sizeof(addr);
 
     //create TCP socket
+    struct sockaddr_in addr;
+    socklen_t addr_len = sizeof(addr);
     int sock_fd = socket_description(port, addr);
 
     //set up synchronous i/o for handling multiple clients
     fd_set readfs, temp_readfs;       //create two sets of file descriptors, one to track active connections (readfs) and the other to hold temporary fds (temp_readfs)
-    FD_ZERO(&readfs);                 //initialise current sockets to zero
-    FD_SET(sock_fd, &readfs);         //add the master socket (file descriptor) to the fd_set
+    FD_ZERO(&readfs);                 //initialise fd set to zero
+    FD_SET(sock_fd, &readfs);         //add the master socket to fd_set
 
     //handle client data
     char buffer[SIZE];
@@ -75,9 +75,8 @@ int main(int argc, char const *argv[])
                 // handle existing client
                 else 
                 {
-
+                    //if server receives a message, check if the client sent a "quit" flag then disconnect, else echo message back
                     if((bytes_received = recv(i,p_buffer,SIZE,0) > 0)){
-                        //check if the received message ends in a newline character, replace with null byte.
                         remove_newline(p_buffer);
                         if (strcmp(p_buffer,"quit") == 0){
                             disconnect_client(i);
@@ -151,7 +150,7 @@ int socket_description(int port, struct sockaddr_in server_addr)
 
 
 /* 
- * Replaces newline char with null nyte
+ * Replaces newline char with null nyte in the recieved message
  * p: The client message
  */
 void remove_newline(char *p)
