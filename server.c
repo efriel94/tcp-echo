@@ -23,11 +23,11 @@ int main(int argc, char const *argv[])
     }
     
     int port = atoi(argv[1]);
-    struct sockaddr_in server_addr;
-    struct sockaddr_in client_addr;
+    struct sockaddr_in addr;
+    socklen_t addr_len = sizeof(addr);
 
     //create TCP socket
-    int sock_fd = socket_description(port, server_addr);
+    int sock_fd = socket_description(port, addr);
 
     //set up synchronous i/o for handling multiple clients
     fd_set readfs, temp_readfs;       //create two sets of file descriptors, one to track active connections (readfs) and the other to hold temporary fds (temp_readfs)
@@ -38,11 +38,7 @@ int main(int argc, char const *argv[])
     char buffer[SIZE];
     char *p_buffer = buffer;
     int bytes_received;
-
-    //accept incoming connections
     fprintf(stdout, "Waiting for new connections....\n");
-    socklen_t server_len = sizeof(server_addr);
-    socklen_t client_len = sizeof(client_addr);
 
     while (1)
     {
@@ -64,13 +60,13 @@ int main(int argc, char const *argv[])
                 // this is a new connection to accept on the master socket, set the new connection to the client structure
                 if (i == sock_fd)
                 {
-                    int client = accept(sock_fd,(struct sockaddr *)&client_addr, &server_len);
+                    int client = accept(i,(struct sockaddr *)&addr, &addr_len);
                     if (client < 0)
                     {
                         perror("Error accepting incoming connection");
                         exit(EXIT_FAILURE);
                     } 
-                    fprintf(stdout, "Accepted new connection on %s:%d\n", inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
+                    fprintf(stdout, "Accepted new connection on %s:%d\n", inet_ntoa(addr.sin_addr), ntohs(addr.sin_port));
 
                     // add the new client to fd_set
                     FD_SET(client, &readfs);
@@ -88,7 +84,7 @@ int main(int argc, char const *argv[])
                             FD_CLR(i, &readfs);
                             break;
                         } else {
-                            fprintf(stdout, "Echoing message: \"%s\" back to %s:%d\n", p_buffer, inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
+                            fprintf(stdout, "Echoing message: \"%s\" back to %s:%d\n", p_buffer, inet_ntoa(addr.sin_addr), ntohs(addr.sin_port));
                             int bytes_sent = send(i, p_buffer, bytes_received, 0);
                             if (bytes_sent < 0)
                             {
