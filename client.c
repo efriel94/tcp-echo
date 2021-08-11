@@ -23,6 +23,7 @@
 
 
 int tcp_socket(int port, char *ip_address_server);
+void remove_newline(char *p);
 
 
 int main(int argc, char * argv[])
@@ -65,11 +66,7 @@ int main(int argc, char * argv[])
     int bytes_received;
     while((bytes_received = recv(socket_description, p_buffer, strlen(p_buffer), 0) > 0))
     {
-        if (*(p_buffer + strlen(p_buffer) - 1) == '\n')
-        {
-            *(p_buffer + strlen(p_buffer) - 1) = '\0';
-        }
-
+        remove_newline(p_buffer);
         fprintf(stdout,"Server response: %s\n", p_buffer);
         fprintf(stdout,"> ");
         if(fgets(p_buffer,SIZE,stdin) != NULL)
@@ -119,4 +116,14 @@ int tcp_socket(int port, char *ip_address_server)
     }
 
     return network_socket;
+}
+
+void remove_newline(char *p)
+{
+    while(*p){
+        if(*p == '\n'){
+            *p = '\0';
+        }
+        ++p;
+    }
 }
