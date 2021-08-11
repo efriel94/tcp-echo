@@ -14,8 +14,7 @@
 
 
 int socket_description(int port, struct sockaddr_in server_addr);
-void disconnect_client(fd_set temp_fds, struct sockaddr_in client_addr, socklen_t *client_len, int client);
-int accept_client(int master_sock);
+void remove_newline(char *p);
 
 int main(int argc, char const *argv[])
 {
@@ -45,6 +44,7 @@ int main(int argc, char const *argv[])
     //accept incoming connections
     fprintf(stdout, "Waiting for new connections....\n");
     socklen_t server_len = sizeof(server_addr);
+    socklen_t client_len = sizeof(client_addr);
 
     while (1)
     {
@@ -66,15 +66,16 @@ int main(int argc, char const *argv[])
                 // this is a new connection to accept on the master socket, set the new connection to the client structure
                 if (i == sock_fd)
                 {
-                    int accept_check = accept_client(i);
-                    if(accept_check < 0)
-                    {
-                        close(accept_check);
-                        FD_CLR(accept_check, &readfs);
+                    int client_fds = accept(i, (struct sockaddr *)&client_addr, &client_len);
+                    if (client_fds < 0 ){
+                        //error, exit program
+                        perror("Error accepting client");
+                        exit(EXIT_FAILURE);
                     }
-                    
+                    fprintf(stdout, "Accepted new connection on %s:%d\n", inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
+
                     // add the new client to fd_set
-                    FD_SET(accept_check, &readfs);
+                    FD_SET(i, &readfs);
                 } 
                     
                 // handle existing client
@@ -83,35 +84,34 @@ int main(int argc, char const *argv[])
 
                     if((bytes_received = recv(i,p_buffer,SIZE,0) > 0))
                     {
-                        //check if the received message ends in a newline character, replace with null byte
-                        if (*(p_buffer + strlen(p_buffer) - 1) == '\n')
-                        {
-                            *(p_buffer + strlen(p_buffer) - 1) = '\0';
-                        }
-
-                        //check if the client sends a quit message to the server
-                        if (strcmp(p_buffer,"quit") == 0)
-                        {
-                            disconnect_client(readfs,client_addr,&server_len, i);
+                        //check if the received message ends in a newline character, replace with null byte.
+                        remove_newline(p_buffer);
+                        if (strcmp(p_buffer,"quit") == 0){
+                            //disconnect client and close socket
+                            getpeername(i , (struct sockaddr*)&client_addr, &client_len);
+                            fprintf(stdout, "Host disconnected: %s:%d\n", inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
+                            close(i);
                             FD_CLR(i, &readfs);
-                        }
-                        //echo back message
-                        else
-                        {
-                            fprintf(stdout, "Echoing message: \"%s\" back to %s:%d\n",p_buffer, inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
-                            int bytes_sent = send(i, p_buffer, strlen(p_buffer), 0);
+                            break;
+                        } else {
+                            fprintf(stdout, "Echoing message: \"%s\" back to %s:%d\n", p_buffer, inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
+                            int bytes_sent = send(i, p_buffer, bytes_received, 0);
                             if (bytes_sent < 0)
                             {
                                 perror("Error receiving message");
                                 exit(EXIT_FAILURE);
                             }  
-                        }
+                        } 
                     }
                     
                     // host disconnected
                     else
                     {
-                        disconnect_client(readfs, client_addr, &server_len, i);
+                        getpeername(i , (struct sockaddr*)&client_addr, &client_len);          
+                        fprintf(stdout, "Host disconnected: %s:%d\n", inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
+                        
+                        //close socket and remove client from fd_set
+                        close(i);
                         FD_CLR(i, &readfs);
                     }
                 }    
@@ -125,8 +125,7 @@ int main(int argc, char const *argv[])
 
 /* 
  * Creates a IPv4 TCP/IP socket
- * 
- * port       : Socket will be bind and listen to port number on host
+ * port: Socket will be listen on port num  
  * server_addr: Struct for describing the server/host address
  * 
  * returns: socket description
@@ -164,64 +163,18 @@ int socket_description(int port, struct sockaddr_in server_addr)
     return server_socket;
 }
 
-/* 
- * Will disconnect client from server
- * 
- * temp_fds   : The file descriptor set storing client info
- * client_addr: Struct for describing the client address
- * client_len : Length of client address
- * client     : socket description
- */
-void disconnect_client(fd_set temp_fds, struct sockaddr_in client_addr, socklen_t *client_len, int client)
-{
-    getpeername(client , (struct sockaddr*)&client_addr, client_len);          
-    char const *client_ip = inet_ntoa(client_addr.sin_addr);
-    uint16_t client_port = ntohs(client_addr.sin_port);
-    fprintf(stdout, "Host disconnected: %s:%d\n", client_ip, client_port);
-    
-    //close socket and remove client from fd_set
-    close(client);  
-}
 
 /* 
- * Checks if client is allowed to be accepted
- * master_sock: socket description
- * returns: True - socket number of client if sock number is less than max allowed clients MAX_FDS
- *        : False - -1 if maximum number of clients is reached   
+ * Replaces newline char with null nyte
+ * p: The client message
  */
-int accept_client(int master_sock)
+void remove_newline(char *p)
 {
-    char *welcome = "**** TCP/IP ECHO Server ****\r\nYou are now connected.\n";
-    char *server_full = "close";
-
-    struct sockaddr_in client_addr;
-    socklen_t client_len = sizeof(client_addr);
-    int client_fds = accept(master_sock, (struct sockaddr *)&client_addr, &client_len);
-
-    fprintf(stdout, "Socket number client: %d\n", client_fds);
-    fprintf(stdout, "Accepted new connection on %s:%d\n", inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
-    if (client_fds == -1)
+    while(*p)
     {
-        //error, exit program
-        perror("Error accepting client");
-        exit(EXIT_FAILURE);
-
-    }
-    else if (client_fds > 0 && client_fds < MAX_FDS)
-    {
-        //send welcome message to client
-        if(send(client_fds, welcome, strlen(welcome), 0) < 0) {
-            perror("Error sending message to client\n");
+        if(*p == '\n'){
+            *p = '\0';
         }
-        return client_fds;
-    }
-    else 
-    {
-        //let client know server is full, unable to join
-        fprintf(stdout, "Server at full capacity. Sending close flag to client\n");
-        if(send(client_fds, server_full, strlen(server_full), 0) < 0) {
-            perror("Error sending message to client\n");
-        }
-        return -1;
+        ++p;
     }
 }
