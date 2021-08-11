@@ -1,6 +1,6 @@
 # Synchronous TCP/IP Echo Server in C
 
-This project is a synchronous TCP/IP echo server wrote in C which supports multiple clients. The client sends a message to the server and the server echos back the message to the client. The maximum amount of clients allowed to communicate with the server is defined in ```MAX_FDS``` (max file descriptors)
+This project is a synchronous TCP/IP echo server wrote in C which supports multiple clients. The client sends a message to the server and the server echos back the message to the client. The maximum amount of clients allowed to communicate with the server is defined in ```FD_SETSIZE```
 
 The synchronous I/O functionality was implemented using the functions in the select library. The server handles each client using file descriptors. Each client will have their own file descriptor which describes their socket address structure and each one is stored in ```fd_set``` on the server to keep track of the connections. 
 <br>
