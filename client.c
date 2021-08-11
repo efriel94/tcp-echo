@@ -1,3 +1,14 @@
+/********************************************
+ *  
+ * file:    client.c
+ * brief:   The program will connect to a server specified by the user
+ *          and send messages which will be echoed back
+ * author:  Emmet Friel
+ * date:    30/07/2021
+ * 
+ *******************************************/ 
+
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>       /* memset */

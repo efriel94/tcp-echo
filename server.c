@@ -1,3 +1,14 @@
+/********************************************
+ *  
+ * file:    server.c
+ * brief:   Responsible for creating a TCP/IP server which will listen on a port specified by the user.
+ *          The server will handle new and existing connections and echo back the message which the client
+ *          had sent to the server
+ * author:  Emmet Friel
+ * date:    30/07/2021
+ * 
+ *******************************************/ 
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>       /* memset */
